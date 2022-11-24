@@ -1,0 +1,80 @@
+### Sucessful Registration
+
+POST http://127.0.0.1:8000/api/custom-registration HTTP/1.1
+Content-Type: application/json
+
+{
+    "mobile": "51468111",
+    "password": "123456"
+}
+
+### Sucessful login
+
+POST http://127.0.0.1:8000/api/custom-login HTTP/1.1
+Content-Type: application/json
+
+{
+    "mobile": "51468111",
+    "password": "123456"
+}
+
+### Failed login by invalid login details
+
+POST http://127.0.0.1:8000/api/custom-login HTTP/1.1
+Content-Type: application/json
+
+{
+    "mobile": "51468111",
+    "password": "123457"
+}
+
+### Earn random points by daily lucky draw (once a day)
+
+POST http://127.0.0.1:8000/api/add-point HTTP/1.1
+Content-Type: application/json
+
+### List e-coupon with details including quota and required points
+
+GET http://127.0.0.1:8000/api/coupons HTTP/1.1
+
+### 
+
+POST http://127.0.0.1:8000/api/coupon HTTP/1.1
+Content-Type: application/json
+
+{
+    "name_en": "Coupon 1",
+    "description_en": "Coupon 1 description",
+    "name_tc": "Coupon 1 (TC)",
+    "description_tc": "Coupon 1 description (TC)",
+    "quota": 200,
+    "discount": 25,
+    "discount_type": "flat",
+    "required_point": 40
+}
+
+### update coupon via CMS
+
+PUT http://127.0.0.1:8000/api/coupon/1 HTTP/1.1
+Content-Type: application/json
+
+{
+    "name_en": "Coupon 1 (changed)",
+    "description_en": "Coupon 1 description (changed)",
+    "name_tc": "Coupon 1 (TC) (changed)",
+    "description_tc": "Coupon 1 description (TC) (changed)",
+    "quota": 300,
+    "discount": 35,
+    "discount_type": "flat",
+    "required_point": 40
+}
+
+### Redeem e-coupon by points
+
+POST http://127.0.0.1:8000/api/redeem HTTP/1.1
+Content-Type: application/json
+
+{
+    "coupon_id": 1
+}
+

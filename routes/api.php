@@ -1,7 +1,10 @@
 <?php
 
-use App\Models\Post;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CouponController;
+use App\Http\Controllers\PointController;
 use App\Http\Controllers\PostsApiController;
+use App\Http\Controllers\RedeemController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +23,19 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/posts', [PostsApiController::class, 'index']);
-Route::post('/posts', [PostsApiController::class, 'store']);
-Route::put('/posts/{post}', [PostsApiController::class, 'update']);
-Route::delete('/posts/{post}', [PostsApiController::class, 'destroy']);
+Route::post('custom-login', [AuthController::class, 'customLogin'])->name('login.custom');
+Route::get('registration', [AuthController::class, 'registration'])->name('register-user');
+Route::post('custom-registration', [AuthController::class, 'customRegistration'])->name('register.custom');
+Route::get('signout', [AuthController::class, 'signOut'])->name('signout');
+
+Route::group(['middleware' => ['web']], function () {
+    Route::get('login', [AuthController::class, 'index'])->name('login');
+});
+
+Route::post('add-point', [PointController::class, 'addPointByLuckyDraw']);
+
+Route::get('/coupons', [CouponController::class, 'getAll']);
+Route::post('/coupon', [CouponController::class, 'create']);
+Route::put('/coupon/{id}', [CouponController::class, 'update']);
+
+Route::post('/redeem', [RedeemController::class, 'create']);
