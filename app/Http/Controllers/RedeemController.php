@@ -41,9 +41,9 @@ class RedeemController extends Controller
         }
 
         $updated_quota = $quota - 1;
-        DB::beginTransaction();
 
         try {
+            DB::beginTransaction();
             Coupon::where('id', $couponId)->update([
                 'quota' => $updated_quota,
             ]);

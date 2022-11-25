@@ -27,9 +27,9 @@ class CouponController extends Controller
         ]);
 
         $data = $request->all();
-        DB::beginTransaction();
 
         try {
+            DB::beginTransaction();
             $nameTextContent = TextContent::create([
                 'text' => $data['name_en'],
                 'language_id' => self::$EN_LANGUAGE_ID,
@@ -86,12 +86,12 @@ class CouponController extends Controller
 
         $couponId = request()->id;
         $data = $request->all();
-        DB::beginTransaction();
 
         $name_tx_id = Coupon::findOrFail($couponId)->name_tx_id;
         $description_tx_id = Coupon::findOrFail($couponId)->description_tx_id;
 
         try {
+            DB::beginTransaction();
             if (isset($data['name_en'])) {
                 TextContent::where('id', $name_tx_id)->update([
                     'text' => $data['name_en'],

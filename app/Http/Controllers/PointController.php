@@ -27,9 +27,9 @@ class PointController extends Controller
         $addedPoint = rand(10, 100);
         $updatedPoint = $originalPoint + $addedPoint;
 
-        DB::beginTransaction();
 
         try {
+            DB::beginTransaction();
             UserPoint::where('user_id', $userId)->update([
                 'point_earned' => $updatedPoint,
             ]);
