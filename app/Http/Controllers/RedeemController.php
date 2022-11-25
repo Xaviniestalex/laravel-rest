@@ -8,6 +8,7 @@ use App\Models\UserPoint;
 use App\Models\UserPointLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RedeemController extends Controller
 {
@@ -28,7 +29,6 @@ class RedeemController extends Controller
         }
 
         $userId = Auth::id();
-        // $userId = 12;
         $point_earned = UserPoint::where('user_id', $userId)->value('point_earned');
         $point_used = UserPoint::where('user_id', $userId)->value('point_used');
         $point_left = $point_earned - $point_used;
@@ -41,29 +41,38 @@ class RedeemController extends Controller
         }
 
         $updated_quota = $quota - 1;
-        Coupon::where('id', $couponId)->update([
-            'quota' => $updated_quota,
-        ]);
+        DB::beginTransaction();
 
-        UserCoupon::create([
-            'user_id' => $userId,
-            'coupon_id' => $couponId,
-            'obtained_at' => date("Y-m-d H:i:s"),
-        ]);
+        try {
+            Coupon::where('id', $couponId)->update([
+                'quota' => $updated_quota,
+            ]);
 
-        $updated_point_used = $point_used + $required_point;
-        UserPoint::where('user_id', $userId)->update([
-            'point_used' => $updated_point_used,
-        ]);
+            UserCoupon::create([
+                'user_id' => $userId,
+                'coupon_id' => $couponId,
+                'obtained_at' => date("Y-m-d H:i:s"),
+            ]);
 
-        UserPointLog::create([
-            'user_id' => $userId,
-            'changed_amount' => - ($required_point),
-        ]);
+            $updated_point_used = $point_used + $required_point;
+            UserPoint::where('user_id', $userId)->update([
+                'point_used' => $updated_point_used,
+            ]);
 
-        $updated_point_left = $point_left - $required_point;
-        return [
-            'success' => "This coupon is redeemed! You now have ${updated_point_left} point(s)."
-        ];
+            UserPointLog::create([
+                'user_id' => $userId,
+                'changed_amount' => - ($required_point),
+            ]);
+
+            DB::commit();
+
+            $updated_point_left = $point_left - $required_point;
+            return [
+                'success' => "This coupon is redeemed! You now have ${updated_point_left} point(s)."
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

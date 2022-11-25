@@ -6,6 +6,7 @@ use App\Models\UserPoint;
 use App\Models\UserPointLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PointController extends Controller
 {
@@ -26,18 +27,26 @@ class PointController extends Controller
         $addedPoint = rand(10, 100);
         $updatedPoint = $originalPoint + $addedPoint;
 
-        UserPoint::where('user_id', $userId)->update([
-            'point_earned' => $updatedPoint,
-        ]);
+        DB::beginTransaction();
 
-        $success = UserPointLog::create([
-            'user_id' => $userId,
-            'changed_amount' => $addedPoint,
-        ]);
+        try {
+            UserPoint::where('user_id', $userId)->update([
+                'point_earned' => $updatedPoint,
+            ]);
 
-        return [
-            'success' => $success,
-            'lastEarnedDateTime' => $lastEarnedDateTime,
-        ];
+            $success = UserPointLog::create([
+                'user_id' => $userId,
+                'changed_amount' => $addedPoint,
+            ]);
+
+            DB::commit();
+            return [
+                'success' => $success,
+                'lastEarnedDateTime' => $lastEarnedDateTime,
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

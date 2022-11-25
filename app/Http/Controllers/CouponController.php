@@ -6,6 +6,7 @@ use App\Models\Coupon;
 use App\Models\TextContent;
 use App\Models\Translation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CouponController extends Controller
 {
@@ -26,38 +27,48 @@ class CouponController extends Controller
         ]);
 
         $data = $request->all();
-        $nameTextContent = TextContent::create([
-            'text' => $data['name_en'],
-            'language_id' => self::$EN_LANGUAGE_ID,
-        ]);
-        $name_tx_id = $nameTextContent->id;
-        $descriptionTextContent = TextContent::create([
-            'text' => $data['description_en'],
-            'language_id' => self::$EN_LANGUAGE_ID,
-        ]);
-        $description_tx_id = $descriptionTextContent->id;
+        DB::beginTransaction();
 
-        if (isset($data['name_tc']) && isset($data['description_tc'])) {
-            Translation::create([
-                'text_content_id' => $name_tx_id,
-                'language_id' => self::$TC_LANGUAGE_ID,
-                'translation' => $data['name_tc'],
+        try {
+            $nameTextContent = TextContent::create([
+                'text' => $data['name_en'],
+                'language_id' => self::$EN_LANGUAGE_ID,
             ]);
-            Translation::create([
-                'text_content_id' => $description_tx_id,
-                'language_id' => self::$TC_LANGUAGE_ID,
-                'translation' => $data['description_tc'],
+            $name_tx_id = $nameTextContent->id;
+            $descriptionTextContent = TextContent::create([
+                'text' => $data['description_en'],
+                'language_id' => self::$EN_LANGUAGE_ID,
             ]);
-            unset($data['name_tc']);
-            unset($data['description_tc']);
+            $description_tx_id = $descriptionTextContent->id;
+
+            if (isset($data['name_tc']) && isset($data['description_tc'])) {
+                Translation::create([
+                    'text_content_id' => $name_tx_id,
+                    'language_id' => self::$TC_LANGUAGE_ID,
+                    'translation' => $data['name_tc'],
+                ]);
+                Translation::create([
+                    'text_content_id' => $description_tx_id,
+                    'language_id' => self::$TC_LANGUAGE_ID,
+                    'translation' => $data['description_tc'],
+                ]);
+                unset($data['name_tc']);
+                unset($data['description_tc']);
+            }
+
+            unset($data['name_en']);
+            unset($data['description_en']);
+            $data['name_tx_id'] = $name_tx_id;
+            $data['description_tx_id'] = $description_tx_id;
+
+            $return = Coupon::create($data);
+
+            DB::commit();
+            return $return;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
-
-        unset($data['name_en']);
-        unset($data['description_en']);
-        $data['name_tx_id'] = $name_tx_id;
-        $data['description_tx_id'] = $description_tx_id;
-
-        return Coupon::create($data);
     }
 
     public function update(Request $request)
@@ -75,40 +86,47 @@ class CouponController extends Controller
 
         $couponId = request()->id;
         $data = $request->all();
+        DB::beginTransaction();
 
         $name_tx_id = Coupon::findOrFail($couponId)->name_tx_id;
         $description_tx_id = Coupon::findOrFail($couponId)->description_tx_id;
 
-        if (isset($data['name_en'])) {
-            TextContent::where('id', $name_tx_id)->update([
-                'text' => $data['name_en'],
-            ]);
-            unset($data['name_en']);
-        }
-        if (isset($data['description_en'])) {
-            TextContent::where('id', $description_tx_id)->update([
-                'text' => $data['description_en'],
-            ]);
-            unset($data['description_en']);
-        }
-        if (isset($data['name_tc'])) {
-            Translation::where('text_content_id', $name_tx_id)->update([
-                'translation' => $data['name_tc'],
-            ]);
-            unset($data['name_tc']);
-        }
-        if (isset($data['description_tc'])) {
-            Translation::where('text_content_id', $description_tx_id)->update([
-                'translation' => $data['description_tc'],
-            ]);
-            unset($data['description_tc']);
-        }
+        try {
+            if (isset($data['name_en'])) {
+                TextContent::where('id', $name_tx_id)->update([
+                    'text' => $data['name_en'],
+                ]);
+                unset($data['name_en']);
+            }
+            if (isset($data['description_en'])) {
+                TextContent::where('id', $description_tx_id)->update([
+                    'text' => $data['description_en'],
+                ]);
+                unset($data['description_en']);
+            }
+            if (isset($data['name_tc'])) {
+                Translation::where('text_content_id', $name_tx_id)->update([
+                    'translation' => $data['name_tc'],
+                ]);
+                unset($data['name_tc']);
+            }
+            if (isset($data['description_tc'])) {
+                Translation::where('text_content_id', $description_tx_id)->update([
+                    'translation' => $data['description_tc'],
+                ]);
+                unset($data['description_tc']);
+            }
 
-        $success = Coupon::where('id', $couponId)->update($data);
+            $success = Coupon::where('id', $couponId)->update($data);
 
-        return [
-            'success' => $success,
-        ];
+            DB::commit();
+            return [
+                'success' => $success,
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function getAll()
